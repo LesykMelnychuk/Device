@@ -12,12 +12,12 @@ open class Device {
     static fileprivate func getVersionCode() -> String {
         var systemInfo = utsname()
         uname(&systemInfo)
-        
-        if let versionCodeStr: NSString = NSString(bytes: &systemInfo.machine, length: Int(_SYS_NAMELEN), encoding: String.Encoding.ascii.rawValue), let utf8CodeString = versionCodeStr.utf8String, let versionCode: String = String(validatingUTF8: utf8CodeString) {
-            return versionCode
+        let machineMirror = Mirror(reflecting: systemInfo.machine)
+        let identifier = machineMirror.children.reduce("") { identifier, element in
+            guard let value = element.value as? Int8, value != 0 else { return identifier }
+            return identifier + String(UnicodeScalar(UInt8(value)))
         }
-        
-        return ""
+        return identifier
     }
     
     static fileprivate func getVersion(code: String) -> Version {
