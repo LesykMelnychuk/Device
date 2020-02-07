@@ -10,19 +10,18 @@ import UIKit
 
 open class Device {
     static fileprivate func getVersionCode() -> String {
-        var systemInfo = utsname()
-        uname(&systemInfo)
-
-        guard let iOSDeviceModelsPath = Bundle.main.path(forResource: "iOSDeviceModelMapping", ofType: "plist") else { return "" }
-        guard let iOSDevices = NSDictionary(contentsOfFile: iOSDeviceModelsPath) else { return "" }
-
-        let machineMirror = Mirror(reflecting: systemInfo.machine)
-        let identifier = machineMirror.children.reduce("") { identifier, element in
-            guard let value = element.value as? Int8, value != 0 else { return identifier }
-            return identifier + String(UnicodeScalar(UInt8(value)))
-        }
-
-        return iOSDevices.value(forKey: identifier) as! String
+        if let modelName = ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"] { return modelName }
+        var info = utsname()
+        uname(&info)
+        
+        return String(String.UnicodeScalarView(
+            Mirror(reflecting: info.machine)
+                .children
+                .compactMap {
+                    guard let value = $0.value as? Int8 else { return nil }
+                    let unicode = UnicodeScalar(UInt8(value))
+                    return unicode.isASCII ? unicode : nil
+        }))
     }
     
     static fileprivate func getVersion(code: String) -> Version {
